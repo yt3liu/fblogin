@@ -26,6 +26,7 @@ import java.io.InputStream;
 public class MainActivity extends ActionBarActivity {
 
     CallbackManager callbackManager;
+    Profile profile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,8 +34,12 @@ public class MainActivity extends ActionBarActivity {
 
         FacebookSdk.sdkInitialize(this.getApplicationContext());
         callbackManager = CallbackManager.Factory.create();
-
         setContentView(R.layout.activity_main);
+
+        profile = Profile.getCurrentProfile();
+        if(profile != null){
+            updateUI();
+        }
 
         LoginButton loginButton = (LoginButton)findViewById(R.id.login_button);
         // Callback registration
@@ -42,25 +47,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onSuccess(LoginResult loginResult) {
                 // App code
-                TextView info = (TextView)findViewById(R.id.info);
-                info.setText("User ID: " + loginResult.getAccessToken().getUserId() + "\n" +
-                        "AuthToken: " + loginResult.getAccessToken().getToken() + "\n" +
-                                    "ToString: " + loginResult.getAccessToken().toString());
-
-                Profile profile = Profile.getCurrentProfile();
-
-                String output = "";
-                output = "ID: " + profile.getId() +"\n";
-                output += "FirstName: " + profile.getFirstName() + "\n";
-                output += "MiddleName: " + profile.getMiddleName() + "\n";
-                output += "LastName: " + profile.getLastName() + "\n";
-                output += "ProfilePic: " + profile.getProfilePictureUri(100, 100) + "\n";
-
-                info.setText(output);
-
-                ProfilePictureView profilePictureView = (ProfilePictureView) findViewById(R.id.profilePicture);
-                profilePictureView.setProfileId(profile.getId());
-
+                updateUI();
             }
 
             @Override
@@ -77,6 +64,27 @@ public class MainActivity extends ActionBarActivity {
                 info.setText("Login attempt failed" + exception.toString());
             }
         });
+    }
+
+    public void updateUI(){
+        TextView info = (TextView)findViewById(R.id.info);
+//        info.setText("User ID: " + loginResult.getAccessToken().getUserId() + "\n" +
+//                "AuthToken: " + loginResult.getAccessToken().getToken() + "\n" +
+//                "ToString: " + loginResult.getAccessToken().toString());
+
+        profile = Profile.getCurrentProfile();
+
+        String output = "";
+        output = "ID: " + profile.getId() +"\n";
+        output += "FirstName: " + profile.getFirstName() + "\n";
+        output += "MiddleName: " + profile.getMiddleName() + "\n";
+        output += "LastName: " + profile.getLastName() + "\n";
+        output += "ProfilePic: " + profile.getProfilePictureUri(100, 100) + "\n";
+
+        info.setText(output);
+
+        ProfilePictureView profilePictureView = (ProfilePictureView) findViewById(R.id.profilePicture);
+        profilePictureView.setProfileId(profile.getId());
     }
 
     @Override
