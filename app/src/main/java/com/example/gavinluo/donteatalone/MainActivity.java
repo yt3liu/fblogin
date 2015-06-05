@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.text.Html;
+import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,13 +21,31 @@ import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.facebook.login.widget.ProfilePictureView;
 
+import org.json.JSONObject;
+
 import java.io.InputStream;
+import java.util.Arrays;
 
 
 public class MainActivity extends ActionBarActivity {
 
     CallbackManager callbackManager;
     Profile profile;
+
+    private static final String NAME = "name";
+    private static final String ID = "id";
+    private static final String PICTURE = "picture";
+    private static final String FIELDS = "fields";
+    private static final String GENDER = "gender";
+    private static final String BIRTHDAY = "birthday";
+    private static final String AGE_RANGE = "age_range";
+    private static final String EMAIL = "email";
+    private static final String USER_FRIENDS = "user_friends";
+
+    private static final String REQUEST_FIELDS =
+            TextUtils.join(",", new String[]{ID, NAME, GENDER, AGE_RANGE, EMAIL, "friends"});
+    private JSONObject user;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,25 +61,50 @@ public class MainActivity extends ActionBarActivity {
         }
 
         LoginButton loginButton = (LoginButton)findViewById(R.id.login_button);
+
+        // set permission for login button
+//        loginButton.setReadPermissions(Arrays.asList("public_profile, user_birthday"));
+        loginButton.setReadPermissions("user_friends");
+
+
         // Callback registration
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
                 // App code
                 updateUI();
+
+                final AccessToken accessToken = AccessToken.getCurrentAccessToken();
+                if (accessToken != null) {
+                    GraphRequest request = GraphRequest.newMeRequest(
+                            accessToken, new GraphRequest.GraphJSONObjectCallback() {
+                                @Override
+                                public void onCompleted(JSONObject me, GraphResponse response) {
+                                    user = me;
+                                    updateUI();
+                                }
+                            });
+                    Bundle parameters = new Bundle();
+                    parameters.putString(FIELDS, REQUEST_FIELDS);
+//                    parameters.putString("fields", "id,name, birthday");
+                    request.setParameters(parameters);
+                    GraphRequest.executeBatchAsync(request);
+                } else {
+                    user = null;
+                }
             }
 
             @Override
             public void onCancel() {
                 // App code
-                TextView info = (TextView)findViewById(R.id.info);
+                TextView info = (TextView) findViewById(R.id.info);
                 info.setText("Login attempt canceled");
             }
 
             @Override
             public void onError(FacebookException exception) {
                 // App code
-                TextView info = (TextView)findViewById(R.id.info);
+                TextView info = (TextView) findViewById(R.id.info);
                 info.setText("Login attempt failed" + exception.toString());
             }
         });
@@ -81,10 +125,21 @@ public class MainActivity extends ActionBarActivity {
         output += "LastName: " + profile.getLastName() + "\n";
         output += "ProfilePic: " + profile.getProfilePictureUri(100, 100) + "\n";
 
+        if(user == null){
+            output += "User: null \n";
+        } else {
+//            output += "User: " + user.toString() + "\n";
+            output += "User: " + user.toString() + "\n";
+        }
+
         info.setText(output);
 
         ProfilePictureView profilePictureView = (ProfilePictureView) findViewById(R.id.profilePicture);
         profilePictureView.setProfileId(profile.getId());
+    }
+
+    public void getUserInfo(){
+
     }
 
     @Override
